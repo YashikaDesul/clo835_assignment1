@@ -49,7 +49,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: mysql_repo
         IMAGE_TAG: ${{ github.run_number }}
-        DBPASS: ${{ secrets.DBPASS }}
+        DBPASS: pw
         DBUSER: ${{ secrets.DBUSER }}
       run: |
         docker network create my_app_network || true
