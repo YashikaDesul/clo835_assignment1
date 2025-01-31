@@ -26,62 +26,56 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build Images
+    - name: Build MySQL Image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
+        ECR_REPOSITORY: mysql_repo
         IMAGE_TAG: ${{ github.run_number }}
       run: |
-        # Build the MySQL image first
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG -f Dockerfile_mysql .
-        
-        # Build the app image second
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG -f Dockerfile .
+        docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}" -f Dockerfile_mysql .
+        docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
 
-        # Verify the images have been built and tagged correctly
-        docker images
-
-    - name: Push MySQL Image to ECR
+    - name: Build WebApp Image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: mysql_repo  # Corrected repository name (update this)
+        ECR_REPOSITORY: webapp_repo
         IMAGE_TAG: ${{ github.run_number }}
       run: |
-        # Push MySQL image to ECR
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
+        docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}" -f Dockerfile .
+        docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
 
-    - name: Test mysql
+    - name: Test MySQL (Optional step)
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: mysql_repo  # Corrected repository name (update this)
+        ECR_REPOSITORY: mysql_repo
         IMAGE_TAG: ${{ github.run_number }}
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
       run: |
         docker network create my_app_network || true
-        docker run -d --name my_db --network my_app_network -e MYSQL_ROOT_PASSWORD=$DBPASS  $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
+        docker run -d --name my_db --network my_app_network -e MYSQL_ROOT_PASSWORD=$DBPASS "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         until docker exec my_db mysqladmin -u root -p$DBPASS ping --silent; do
           echo "Waiting for MySQL connection..."
           sleep 30
         done
 
-    - name: Test app
+    - name: Test WebApp (Optional step)
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
+        ECR_REPOSITORY: webapp_repo
         IMAGE_TAG: ${{ github.run_number }}
         DBPASS: ${{ secrets.DBPASS }}
-        DBUSER: ${{ secrets.DBUSER }}  
-      run: |  
+        DBUSER: ${{ secrets.DBUSER }}
+      run: |
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
         export DBUSER=$DBUSER
         export DATABASE=employees
         export DBPWD=$DBPASS
 
-        docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
-        docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
-        docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
+        docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
+        docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
+        docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         sleep 15
         docker ps
         curl -I localhost:8081
@@ -95,10 +89,3 @@ jobs:
       run: |
         gh pr create -B prod -H dev --title 'Merge dev into prod' --body 'Update changes - by Github action'
 
-    - name: Publish App Image to ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
-        IMAGE_TAG: ${{ github.run_number }}
-      run: |
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
