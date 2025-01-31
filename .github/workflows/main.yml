@@ -1,8 +1,8 @@
-
 name: Build, Test, and Publish Image to ECR
 on: 
   push:
     branches: [ dev ]
+  workflow_dispatch:  # Enables manual trigger
 
 jobs:
   
@@ -11,7 +11,6 @@ jobs:
     name: Build Image
     runs-on: ubuntu-latest
 
-   
     steps:
 
     - name: Check out code
@@ -32,12 +31,12 @@ jobs:
     - name: Build Images
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: clo835-assignment1-repository
+        ECR_REPOSITORY: clo835-assignment1  # Ensure consistency
         IMAGE_TAG: ${{ github.run_number }}
       run: |
-        # Docker build command
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG -f Dockerfile_mysql .
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG -f Dockerfile .
+
     - name: Test mysql
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -46,16 +45,13 @@ jobs:
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
       run: |
-        # Unit test
-        ## Create user-defined network
-        docker network create my_app_network
-        ## Run my_db
+        docker network create my_app_network || true
         docker run -d --name my_db --network my_app_network -e MYSQL_ROOT_PASSWORD=$DBPASS  $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
-        # Wait for MySQL to be ready
         until docker exec my_db mysqladmin -u root -p$DBPASS ping --silent; do
           echo "Waiting for MySQL connection..."
           sleep 30
         done
+
     - name: Test app
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -64,20 +60,17 @@ jobs:
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}  
       run: |  
-        # Setup env variables      
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
         export DBUSER=$DBUSER
         export DATABASE=employees
         export DBPWD=$DBPASS
-        ## Run 3 apps blue, pink and lime
-        docker run -d --name app_blue -p 8081:8080  -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e  DBUSER=$DBUSER -e DBPWD=$DBPASS  -e APP_COLOR="blue" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
-        docker run -d --name app_pink -p 8082:8080  -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e  DBUSER=$DBUSER -e DBPWD=$DBPASS  -e APP_COLOR="pink" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
-        docker run -d --name app_lime -p 8083:8080  -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e  DBUSER=$DBUSER -e DBPWD=$DBPASS  -e APP_COLOR="lime" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
+
+        docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
+        docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
+        docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
         sleep 15
         docker ps
-       
-        ## Test 3 apps 
         curl -I localhost:8081
         curl -I localhost:8082
         curl -I localhost:8083
@@ -85,16 +78,15 @@ jobs:
     - name: Create Pull Request to Prod
       if: success()
       env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create -B prod -H dev --title 'Merge dev into prod' --body 'Update changes - by Github action'
 
-    # - name: Publish Images to ECR
-    #   env:
-    #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-    #     ECR_REPOSITORY: clo835-assignment1
-    #     IMAGE_TAG: ${{ github.run_number }}
-    #   run: |  
-    #     # Publish images to ECR 
-    #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
-    #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
+    - name: Publish Images to ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: clo835-assignment1
+        IMAGE_TAG: ${{ github.run_number }}
+      run: |  
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:app-v$IMAGE_TAG
