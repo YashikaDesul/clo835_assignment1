@@ -1,18 +1,16 @@
 name: Build, Test, and Publish Image to ECR
+
 on: 
   push:
     branches: [ dev ]
   workflow_dispatch:  # Enables manual trigger
 
 jobs:
-  
   build:
-    
     name: Build Image
     runs-on: ubuntu-latest
 
     steps:
-
     - name: Check out code
       uses: actions/checkout@v4
 
@@ -31,7 +29,7 @@ jobs:
     - name: Build Images
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: clo835-assignment1  # Ensure consistency
+        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
         IMAGE_TAG: ${{ github.run_number }}
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG -f Dockerfile_mysql .
@@ -40,7 +38,7 @@ jobs:
     - name: Test mysql
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: clo835-assignment1
+        ECR_REPOSITORY: mysql_repo  # Corrected repository name (update this)
         IMAGE_TAG: ${{ github.run_number }}
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
@@ -55,7 +53,7 @@ jobs:
     - name: Test app
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: clo835-assignment1
+        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
         IMAGE_TAG: ${{ github.run_number }}
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}  
@@ -85,7 +83,7 @@ jobs:
     - name: Publish Images to ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: clo835-assignment1
+        ECR_REPOSITORY: webapp_repo  # Corrected repository name (update this)
         IMAGE_TAG: ${{ github.run_number }}
       run: |  
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
