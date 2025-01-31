@@ -41,6 +41,15 @@ jobs:
         # Verify the images have been built and tagged correctly
         docker images
 
+    - name: Push MySQL Image to ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: mysql_repo  # Corrected repository name (update this)
+        IMAGE_TAG: ${{ github.run_number }}
+      run: |
+        # Push MySQL image to ECR
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
+
     - name: Test mysql
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -85,14 +94,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create -B prod -H dev --title 'Merge dev into prod' --body 'Update changes - by Github action'
-
-    - name: Publish MySQL Image to ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: mysql_repo  # Corrected repository name (update this)
-        IMAGE_TAG: ${{ github.run_number }}
-      run: |
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:mysql-v$IMAGE_TAG
 
     - name: Publish App Image to ECR
       env:
