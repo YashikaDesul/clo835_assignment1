@@ -73,6 +73,8 @@ jobs:
         export DBUSER=root
         export DATABASE=employees
         export DBPWD=pw
+        
+        docker rm blue
 
         docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         
