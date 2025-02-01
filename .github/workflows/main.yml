@@ -69,6 +69,10 @@ jobs:
           sleep 30
         done
 
+        # Ensure MySQL binds to 0.0.0.0
+        docker exec my_db sed -i 's/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
+        docker exec my_db service mysql restart
+
         # Verify MySQL server configuration
         docker exec my_db mysql -uroot -p$DBPASS -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
         
@@ -92,6 +96,14 @@ jobs:
           echo "Waiting for MySQL to be ready..."
           sleep 30
         done
+
+        # Ping MySQL container from web app containers
+        docker run --rm --network my_app_network ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG} ping -c 3 $DBHOST
+
+        # Add a simple connectivity script
+        echo 'import pymysql; conn = pymysql.connect(host="$DBHOST", user="$DBUSER", password="$DBPWD", db="$DATABASE", port=$DBPORT); print("Connected to database"); conn.close()' > db_connect.py
+
+        docker run -v $(pwd):/app --network my_app_network ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG} python /app/db_connect.py
         
         docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue ${ECR_REGISTRY}/${ECR_REPOSITORY}:v16
         docker run -d -p 8082:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
