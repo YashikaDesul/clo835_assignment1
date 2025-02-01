@@ -25,6 +25,13 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+    
+    - name: Cleanup Docker Containers
+      run: |
+        docker stop $(docker ps -aq)
+        docker rm $(docker ps -aq)
+        docker network rm my_app_network || true
+        docker rmi $(docker images -q) || true
 
     - name: Build MySQL Image
       env:
@@ -67,17 +74,16 @@ jobs:
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
       run: |
-        echo DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
         export DBUSER=root
         export DATABASE=employees
         export DBPWD=pw
         
-               
         docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
+        
         sleep 15
         docker ps
         curl -I localhost:8081
@@ -90,4 +96,3 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create -B prod -H dev --title 'Merge dev into prod' --body 'Update changes - by Github action'
-
