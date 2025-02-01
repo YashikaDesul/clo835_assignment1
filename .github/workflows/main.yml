@@ -88,13 +88,25 @@ jobs:
         docker run -d -p 8082:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         docker run -d -p 8083:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app_v2 ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         
+        echo "Checking container statuses..."
+        docker ps
+
+        echo "Checking logs for blue container..."
+        docker logs blue
+
+        echo "Checking logs for blue_app container..."
         docker logs blue_app
+
+        echo "Checking logs for blue_app_v2 container..."
         docker logs blue_app_v2
 
-        sleep 30
-        docker ps
+        echo "Testing connection to port 8081..."
         curl -I localhost:8081
+
+        echo "Testing connection to port 8082..."
         curl -I localhost:8082
+
+        echo "Testing connection to port 8083..."
         curl -I localhost:8083
 
     - name: Create Pull Request to Prod
