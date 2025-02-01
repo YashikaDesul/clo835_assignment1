@@ -28,10 +28,14 @@ jobs:
     
     - name: Cleanup Docker Containers
       run: |
-        docker stop $(docker ps -aq)
-        docker rm $(docker ps -aq)
+        CONTAINERS=$(docker ps -aq)
+        if [ -n "$CONTAINERS" ]; then
+          docker stop $CONTAINERS
+          docker rm $CONTAINERS
+        fi
         docker network rm my_app_network || true
         docker rmi $(docker images -q) || true
+
 
     - name: Build MySQL Image
       env:
