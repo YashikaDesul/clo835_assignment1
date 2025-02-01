@@ -78,6 +78,7 @@ jobs:
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
       run: |
+        echo DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
         export DBUSER=root
@@ -90,7 +91,7 @@ jobs:
         docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         
-        sleep 15
+        sleep 30
         docker ps
         curl -I localhost:8081
         curl -I localhost:8082
