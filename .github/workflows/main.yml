@@ -36,7 +36,6 @@ jobs:
         docker network rm my_app_network || true
         docker rmi $(docker images -q) || true
 
-
     - name: Build MySQL Image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -86,13 +85,12 @@ jobs:
         export DBPWD=pw
         
         docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue ${ECR_REGISTRY}/${ECR_REPOSITORY}:v16
-        docker run -d -p 8085:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
-        docker logs blue_app
-        docker run -d --name app_blue -p 8084:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
-        docker logs blue
-        docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
-        docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
+        docker run -d -p 8082:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
+        docker run -d -p 8083:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app_v2 ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         
+        docker logs blue_app
+        docker logs blue_app_v2
+
         sleep 30
         docker ps
         curl -I localhost:8081
