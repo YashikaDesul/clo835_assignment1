@@ -69,6 +69,9 @@ jobs:
           sleep 30
         done
 
+        # Verify MySQL server configuration
+        docker exec my_db mysql -uroot -p$DBPASS -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$DBPASS' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+        
     - name: Test WebApp
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
