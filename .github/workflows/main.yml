@@ -84,6 +84,12 @@ jobs:
         export DATABASE=employees
         export DBPWD=pw
         
+        # Wait for MySQL server to be ready
+        until docker exec my_db mysqladmin ping --silent; do
+          echo "Waiting for MySQL to be ready..."
+          sleep 30
+        done
+        
         docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue ${ECR_REGISTRY}/${ECR_REPOSITORY}:v16
         docker run -d -p 8082:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         docker run -d -p 8083:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app_v2 ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
