@@ -73,7 +73,9 @@ jobs:
         export DBUSER=root
         export DATABASE=employees
         export DBPWD=pw
-
+        
+        docker run -d -p 8082:8080 -e APP_COLOR=blue -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue webapp_repo
+        
         docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_lime -p 8083:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="lime" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
