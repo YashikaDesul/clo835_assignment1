@@ -69,9 +69,9 @@ jobs:
       run: |
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
-        export DBUSER=$DBUSER
+        export DBUSER=root
         export DATABASE=employees
-        export DBPWD=$DBPASS
+        export DBPWD=pw
 
         docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
