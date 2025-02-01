@@ -74,9 +74,8 @@ jobs:
         export DATABASE=employees
         export DBPWD=pw
 
-        docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
+        docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue_app ${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}
         
-        docker run -d -p 8081:8080 -e APP_COLOR=$APP_COLOR -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPWD --name blue 844188451376.dkr.ecr.us-east-1.amazonaws.com/webapp_repo:v16
         
         docker run -d --name app_blue -p 8081:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="blue" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
         docker run -d --name app_pink -p 8082:8080 -e DBHOST=$DBHOST -e DBPORT=$DBPORT -e DBUSER=$DBUSER -e DBPWD=$DBPASS -e APP_COLOR="pink" "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
