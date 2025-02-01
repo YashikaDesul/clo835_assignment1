@@ -44,7 +44,7 @@ jobs:
         docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}" -f Dockerfile .
         docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
 
-    - name: Test MySQL (Optional step)
+    - name: Test MySQL
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: mysql_repo
@@ -59,7 +59,7 @@ jobs:
           sleep 30
         done
 
-    - name: Test WebApp (Optional step)
+    - name: Test WebApp
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: webapp_repo
@@ -67,6 +67,7 @@ jobs:
         DBPASS: ${{ secrets.DBPASS }}
         DBUSER: ${{ secrets.DBUSER }}
       run: |
+        echo DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBHOST=$(docker inspect -f '{{.NetworkSettings.Networks.my_app_network.IPAddress}}' my_db)
         export DBPORT=3306
         export DBUSER=root
