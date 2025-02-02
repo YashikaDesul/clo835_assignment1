@@ -3,7 +3,7 @@ name: Build, Push Image to ECR
 on: 
   push:
     branches: [ main ]
-  workflow_dispatch:  # Enables manual trigger...
+  workflow_dispatch:  # Enables manual trigger
 
 jobs:
   build:
