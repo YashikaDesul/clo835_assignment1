@@ -2,7 +2,7 @@ name: Build, Push Image to ECR
 
 on: 
   push:
-    branches: [ dev ]
+    branches: [ main ]
   workflow_dispatch:  # Enables manual trigger...
 
 jobs:
