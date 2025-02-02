@@ -26,7 +26,7 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
     
-    - name: Build MySQL Image
+    - name: Build and Push MySQL Image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: mysql_repo
@@ -35,7 +35,7 @@ jobs:
         docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}" -f Dockerfile_mysql .
         docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:v${IMAGE_TAG}"
 
-    - name: Build WebApp Image
+    - name: Build and Push WebApp Image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: webapp_repo
